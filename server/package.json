@@ -1,0 +1,16 @@
+{
+  "name": "TanksServer",
+  "version": "1.0.0",
+  "description": "Tanks server",
+  "main": "TanksServer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.10.0",
+    "express": "^4.10.6",
+    "mkdirp": "^0.5.0"
+  }
+}

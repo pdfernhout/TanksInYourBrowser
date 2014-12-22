@@ -1,0 +1,27 @@
+<html>
+<head>
+<title>Tanks!!!</title>
+</head>
+<body>
+Welcome to Tanks in JavaScript!!!<br>
+
+<canvas id="tankCanvas" width="600" height="600" style="border:1px solid #000000;">
+</canvas> 
+
+<script>
+//var tank1Image = new Image();
+//tank1Image.src = 'tank1.png';
+
+//var tank2Image = new Image();
+//tank2Image.src = 'tank2.png';
+
+var canvas = document.getElementById("tankCanvas");
+var context = canvas.getContext('2d'); 
+context.beginPath();
+context.arc(95, 50, 40, 0, 2*Math.PI);
+context.stroke();
+
+
+</script>
+</body>
+</html>
