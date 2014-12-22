@@ -4,7 +4,6 @@
 
 "use strict";
 
-// TODO: fire and move without releasing keys?
 // TODO: Fix shell offset when turret rotated
 
 var canvas = document.getElementById("tankCanvas");
@@ -14,6 +13,7 @@ var shells = [];
 var shellRange = 10000;
 var traverseSpeed = 0.03;
 var turretSpeed = 0.05;
+var downKeys = {};
 
 var shellImage = new Image();
 
@@ -109,29 +109,39 @@ function incrementShells() {
         if (keep) shellsToKeep.push(shell);
     }
     shells = shellsToKeep;
-    if (hadShells) drawAll();
+    return hadShells;
 }
 
-function keypress(event) {
+function keypress(key) {
     var tank = tank1;
-   console.log("keypress event detected: ", event);
-   if (event.key === 'a' || event.key === 'A') {
+   console.log("keypress event detected: ", key);
+   if (key === 'a' || key === 'A') {
        tank.bodyRotation = tank.bodyRotation - traverseSpeed;
-   } else if (event.key === 'd' || event.key === 'D') {
+   } else if (key === 'd' || key === 'D') {
        tank.bodyRotation = tank.bodyRotation + traverseSpeed;
-   } else if (event.key === 'w' || event.key === 'W') {
+   } else if (key === 'w' || key === 'W') {
        moveTank(tank, 10);
-   } else if (event.key === 's' || event.key === 'S') {
+   } else if (key === 's' || key === 'S') {
        moveTank(tank, -10);
-   } else if (event.key === 'Left') {
+   } else if (key === 'Left') {
        tank.turretRotation = tank.turretRotation - turretSpeed;
-   } else if (event.key === 'Right') {
+   } else if (key === 'Right') {
        tank.turretRotation = tank.turretRotation + turretSpeed;
-   } else if (event.key === ' ') {
+   } else if (key === ' ') {
        fire(tank);
    }
-   
-   drawAll();
+}
+
+function keydown(event) {
+    var key = event.key;
+    downKeys[key] = true;
+    keypress(key);
+    drawAll();
+}
+
+function keyup(event) {
+    var key = event.key;
+    delete downKeys[key];
 }
 
 function drawAll() {
@@ -141,15 +151,25 @@ function drawAll() {
     drawShells();
 }
 
+function timerTick() {
+    var redrawNeeded = incrementShells();
+    for (var key in downKeys) {
+        redrawNeeded = true;
+        keypress(key);
+    }
+    if (redrawNeeded) drawAll();
+}
+
 function setup() {
 
     tank1.bodyImage.src = 'images/hullv1.png';
     tank1.turretImage.src = 'images/tank1imageturretv2.png';
     shellImage.src = 'images/shell.png';
         
-    window.onkeypress = keypress;
+    window.onkeydown = keydown;
+    window.onkeyup = keyup;
     
-    window.setInterval(incrementShells, 100);
+    window.setInterval(timerTick, 100);
 }
 
 setup();
