@@ -9,19 +9,19 @@ Welcome to Tanks in JavaScript!!!<br>
 </canvas> 
 
 <script>
-//var tank1Image = new Image();
-//tank1Image.src = 'tank1.png';
-
 //var tank2Image = new Image();
 //tank2Image.src = 'tank2.png';
 
 var canvas = document.getElementById("tankCanvas");
 var context = canvas.getContext('2d'); 
 context.beginPath();
-context.arc(95, 50, 40, 0, 2*Math.PI);
+context.arc(95, 50, 40, 0, 2 * Math.PI);
 context.stroke();
 
-
+var tank1Image = new Image();
+tank1Image.src = 'images/tank1image.png';
+context.scale(0.20, 0.20);
+context.drawImage(tank1Image, 200, 200);
 </script>
 </body>
 </html>
