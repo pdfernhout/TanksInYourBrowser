@@ -6,14 +6,19 @@
 
 // TODO: Fix shell offset when turret rotated
 
-var canvas = document.getElementById("tankCanvas");
-var context = canvas.getContext('2d');
 var imageScale = 0.20;
-var shells = [];
+
 var shellRange = 10000;
 var traverseSpeed = 0.03;
-var turretSpeed = 0.05;
+var turretSpeed = 0.03;
+var fireWaitDelay_ms = 2000;
+
+var canvas = document.getElementById("tankCanvas");
+var context = canvas.getContext('2d');
+
+var shells = [];
 var downKeys = {};
+var lastShotTime = new Date();
 
 var shellImage = new Image();
 
@@ -90,6 +95,10 @@ function moveShell(shell, distance) {
 }
 
 function fire(tank) {
+    var now = new Date();
+    var fireWait_ms = now.getTime() - lastShotTime.getTime();
+    if (fireWait_ms < fireWaitDelay_ms) return;
+    
     var barrelLength = 450;
     
     // var x = tank.x + -70 * Math.cos(shell.direction - 3.14159265 * 0.5) + 
@@ -97,6 +106,7 @@ function fire(tank) {
     var shell = {x: tank.x, y: tank.y, direction: tank.bodyRotation + tank.turretRotation, distance: 0.0};
     moveShell(shell, barrelLength);
     shells.push(shell);
+    lastShotTime = now;
 }
 
 function incrementShells() {
