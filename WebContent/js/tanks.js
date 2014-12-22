@@ -7,6 +7,8 @@
 var canvas = document.getElementById("tankCanvas");
 var context = canvas.getContext('2d');
 var imageScale = 0.20;
+var shells = [];
+var shellRange = 10000;
 
 var tank1 = {
     x: 500,
@@ -34,9 +36,50 @@ function drawTank(tank) {
     context.restore();
 }
 
-function move(tank, distance) {
-    tank.x = tank.x + distance * Math.cos(tank.bodyRotation + 3.14159265 * 0.5);
-    tank.y = tank.y + distance * Math.sin(tank.bodyRotation + 3.14159265 * 0.5);
+function drawShell(shell) {
+    context.save();
+    context.beginPath();
+    context.arc(shell.x * imageScale, shell.y * imageScale, 4, 0, 2 * Math.PI);
+    context.stroke();
+    context.restore();
+}
+
+function drawShells() {
+    for (var shellIndex in shells) {
+        var shell = shells[shellIndex];
+        drawShell(shell);
+    }
+}
+
+function moveTank(tank, distance) {
+    tank.x = tank.x + distance * Math.cos(tank.bodyRotation - 3.14159265 * 0.5);
+    tank.y = tank.y + distance * Math.sin(tank.bodyRotation - 3.14159265 * 0.5);
+}
+
+function moveShell(shell, distance) {
+    shell.x = shell.x + distance * Math.cos(shell.direction - 3.14159265 * 0.5);
+    shell.y = shell.y + distance * Math.sin(shell.direction - 3.14159265 * 0.5);
+    shell.distance += distance;
+    if (shell.distance > shellRange) return false;
+    return true;
+}
+
+function fire(tank) {
+    var shell = {x: tank.x, y: tank.y, direction: tank.bodyRotation, distance: 0.0};
+    shells.push(shell);
+}
+
+function incrementShells() {
+    var hadShells = shells.length;
+    var shellsToKeep = [];
+    var shellIndex;
+    for (shellIndex in shells) {
+        var shell = shells[shellIndex];
+        var keep = moveShell(shell, 100);
+        if (keep) shellsToKeep.push(shell);
+    }
+    shells = shellsToKeep;
+    if (hadShells) drawAll();
 }
 
 function keypress(event) {
@@ -47,9 +90,11 @@ function keypress(event) {
    } else if (event.key === 'd' || event.key === 'D') {
        tank.bodyRotation = tank.bodyRotation + 0.1;
    } else if (event.key === 'w' || event.key === 'W') {
-       move(tank, -10);
+       moveTank(tank, 10);
    } else if (event.key === 's' || event.key === 'S') {
-       move(tank, 10);
+       moveTank(tank, -10);
+   } else if (event.key === ' ') {
+       fire(tank);
    }
    
    drawAll();
@@ -59,6 +104,7 @@ function drawAll() {
     context.clearRect ( 0 , 0 , canvas.width, canvas.height );
     drawCaptureCircle();
     drawTank(tank1);
+    drawShells();
 }
 
 function setup() {
@@ -66,6 +112,8 @@ function setup() {
     tank1.bodyImage.src = 'images/tank1imagev2.png';
     
     window.onkeypress = keypress;
+    
+    window.setInterval(incrementShells, 100);
 }
 
 setup();
