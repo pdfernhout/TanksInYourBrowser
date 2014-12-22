@@ -15,6 +15,8 @@ var shellRange = 10000;
 var traverseSpeed = 0.03;
 var turretSpeed = 0.05;
 
+var shellImage = new Image();
+
 var tank1 = {
     x: 500,
     y: 500,
@@ -56,10 +58,15 @@ function drawTank(tank) {
 
 function drawShell(shell) {
     context.save();
-    context.beginPath();
-    context.arc(shell.x * imageScale, shell.y * imageScale, 4, 0, 2 * Math.PI);
-    context.stroke();
+    context.scale(imageScale, imageScale);
+    context.translate(shell.x, shell.y);
+    context.rotate(shell.direction);
+    context.drawImage(shellImage, 0, 0);
     context.restore();
+    
+    // context.beginPath();
+    // context.arc(shell.x * imageScale, shell.y * imageScale, 4, 0, 2 * Math.PI);
+    // context.stroke();
 }
 
 function drawShells() {
@@ -138,7 +145,8 @@ function setup() {
 
     tank1.bodyImage.src = 'images/hullv1.png';
     tank1.turretImage.src = 'images/tank1imageturretv2.png';
-    
+    shellImage.src = 'images/shell.png';
+        
     window.onkeypress = keypress;
     
     window.setInterval(incrementShells, 100);
