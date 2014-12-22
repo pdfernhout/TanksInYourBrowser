@@ -4,18 +4,24 @@
 
 "use strict";
 
+// TODO: fire and move without releasing keys?
+// TODO: Fix shell offset when turret rotated
+
 var canvas = document.getElementById("tankCanvas");
 var context = canvas.getContext('2d');
 var imageScale = 0.20;
 var shells = [];
 var shellRange = 10000;
+var traverseSpeed = 0.03;
+var turretSpeed = 0.05;
 
 var tank1 = {
     x: 500,
     y: 500,
     bodyRotation: 1.0,
-    turretRotation: 1.0,
-    bodyImage: new Image()
+    turretRotation: 0.0,
+    bodyImage: new Image(),
+    turretImage: new Image()
 };
 
 function drawCaptureCircle() {
@@ -26,13 +32,25 @@ function drawCaptureCircle() {
 
 function drawTank(tank) {
     var bodyImage = tank.bodyImage;
+    var turretImage = tank.turretImage;
     
     context.save();
+    
     context.scale(imageScale, imageScale);
     context.translate(tank.x, tank.y);
+    
     context.rotate(tank.bodyRotation);
+    
+    context.save();
     context.translate( -bodyImage.width / 2, -bodyImage.height / 2);
     context.drawImage(bodyImage, 0, 0);
+    context.restore();
+    
+    context.translate( 0, -70);
+    context.rotate(tank.turretRotation);
+    context.translate( -turretImage.width / 2, -turretImage.height / 2 - 50);
+    context.drawImage(turretImage, 0, 0);
+    
     context.restore();
 }
 
@@ -65,7 +83,12 @@ function moveShell(shell, distance) {
 }
 
 function fire(tank) {
-    var shell = {x: tank.x, y: tank.y, direction: tank.bodyRotation, distance: 0.0};
+    var barrelLength = 450;
+    
+    // var x = tank.x + -70 * Math.cos(shell.direction - 3.14159265 * 0.5) + 
+    
+    var shell = {x: tank.x, y: tank.y, direction: tank.bodyRotation + tank.turretRotation, distance: 0.0};
+    moveShell(shell, barrelLength);
     shells.push(shell);
 }
 
@@ -86,13 +109,17 @@ function keypress(event) {
     var tank = tank1;
    console.log("keypress event detected: ", event);
    if (event.key === 'a' || event.key === 'A') {
-       tank.bodyRotation = tank.bodyRotation - 0.1;
+       tank.bodyRotation = tank.bodyRotation - traverseSpeed;
    } else if (event.key === 'd' || event.key === 'D') {
-       tank.bodyRotation = tank.bodyRotation + 0.1;
+       tank.bodyRotation = tank.bodyRotation + traverseSpeed;
    } else if (event.key === 'w' || event.key === 'W') {
        moveTank(tank, 10);
    } else if (event.key === 's' || event.key === 'S') {
        moveTank(tank, -10);
+   } else if (event.key === 'Left') {
+       tank.turretRotation = tank.turretRotation - turretSpeed;
+   } else if (event.key === 'Right') {
+       tank.turretRotation = tank.turretRotation + turretSpeed;
    } else if (event.key === ' ') {
        fire(tank);
    }
@@ -109,7 +136,8 @@ function drawAll() {
 
 function setup() {
 
-    tank1.bodyImage.src = 'images/tank1imagev2.png';
+    tank1.bodyImage.src = 'images/hullv1.png';
+    tank1.turretImage.src = 'images/tank1imageturretv2.png';
     
     window.onkeypress = keypress;
     
