@@ -3,7 +3,7 @@ TanksInYourBrowser
 
 Multi-player tank toy using JavaScript in the browser and node.js with socket.io for the server
 
-Copyright 2014 by Paul Fernhout <pdfernhotu@kurtz-fernhout.com> and contributors
+Copyright 2014 by Paul Fernhout <pdfernhout@kurtz-fernhout.com> and contributors
 MIT License
 
 Use node.js to run server/TanksServer.js.
