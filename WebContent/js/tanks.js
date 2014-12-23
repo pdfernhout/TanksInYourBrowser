@@ -2,6 +2,8 @@
 /* jshint browser: true */
 /* jshint -W097 */
 
+/* global io */
+
 "use strict";
 
 // TODO: Fix shell offset when turret rotated
@@ -12,23 +14,30 @@ var shellRange = 10000;
 var traverseSpeed = 0.03;
 var turretSpeed = 0.03;
 var fireWaitDelay_ms = 2000;
+var tankUpdateThreshold_ms = 5000;
 
 var canvas = document.getElementById("tankCanvas");
 var context = canvas.getContext('2d');
+var socket = io();
 
 var shells = [];
 var downKeys = {};
+var lastTankUpdate = new Date();
 var lastShotTime = new Date();
 
+var bodyImage = new Image();
+var turretImage = new Image();
 var shellImage = new Image();
 
-var tank1 = {
+var tanks = {};
+var dirty = true;
+
+var localTank = {
+    id: "" + Math.random(),
     x: 500,
     y: 500,
     bodyRotation: 1.0,
-    turretRotation: 0.0,
-    bodyImage: new Image(),
-    turretImage: new Image()
+    turretRotation: 0.0
 };
 
 function drawCaptureCircle() {
@@ -38,9 +47,6 @@ function drawCaptureCircle() {
 }
 
 function drawTank(tank) {
-    var bodyImage = tank.bodyImage;
-    var turretImage = tank.turretImage;
-    
     context.save();
     
     context.scale(imageScale, imageScale);
@@ -59,6 +65,13 @@ function drawTank(tank) {
     context.drawImage(turretImage, 0, 0);
     
     context.restore();
+}
+
+function drawTanks() {
+    for (var key in tanks) {
+        var tank = tanks[key];
+        drawTank(tank);
+    }
 }
 
 function drawShell(shell) {
@@ -84,6 +97,7 @@ function drawShells() {
 function moveTank(tank, distance) {
     tank.x = tank.x + distance * Math.cos(tank.bodyRotation - 3.14159265 * 0.5);
     tank.y = tank.y + distance * Math.sin(tank.bodyRotation - 3.14159265 * 0.5);
+    dirty = true;
 }
 
 function moveShell(shell, distance) {
@@ -95,10 +109,6 @@ function moveShell(shell, distance) {
 }
 
 function fire(tank) {
-    var now = new Date();
-    var fireWait_ms = now.getTime() - lastShotTime.getTime();
-    if (fireWait_ms < fireWaitDelay_ms) return;
-    
     var barrelLength = 450;
     
     // var x = tank.x + -70 * Math.cos(shell.direction - 3.14159265 * 0.5) + 
@@ -106,7 +116,7 @@ function fire(tank) {
     var shell = {x: tank.x, y: tank.y, direction: tank.bodyRotation + tank.turretRotation, distance: 0.0};
     moveShell(shell, barrelLength);
     shells.push(shell);
-    lastShotTime = now;
+    dirty = true;
 }
 
 function incrementShells() {
@@ -122,22 +132,43 @@ function incrementShells() {
     return hadShells;
 }
 
+function rotateTank(tank, amount) {
+    tank.bodyRotation = tank.bodyRotation + amount;
+    dirty = true;
+}
+
+function rotateTurret(tank, amount) {
+    tank.turretRotation = tank.turretRotation + amount;
+    dirty = true;
+}
+
 function keypress(key) {
-    var tank = tank1;
-   console.log("keypress event detected: ", key);
+    var tank = localTank;
+   // console.log("keypress event detected: ", key);
    if (key === 'a' || key === 'A') {
-       tank.bodyRotation = tank.bodyRotation - traverseSpeed;
+       socket.emit('rotateTank', {id: localTank.id, amount: -traverseSpeed});
+       rotateTank(tank, -traverseSpeed);
    } else if (key === 'd' || key === 'D') {
-       tank.bodyRotation = tank.bodyRotation + traverseSpeed;
+       socket.emit('rotateTank', {id: localTank.id, amount: traverseSpeed});
+       rotateTank(tank, traverseSpeed);
    } else if (key === 'w' || key === 'W') {
+       socket.emit('moveTank', {id: localTank.id, amount: 10});
        moveTank(tank, 10);
    } else if (key === 's' || key === 'S') {
+       socket.emit('moveTank', {id: localTank.id, amount: -10});
        moveTank(tank, -10);
    } else if (key === 'Left') {
-       tank.turretRotation = tank.turretRotation - turretSpeed;
+       socket.emit('rotateTurret', {id: localTank.id, amount: -turretSpeed});
+       rotateTurret(tank, -turretSpeed);
    } else if (key === 'Right') {
-       tank.turretRotation = tank.turretRotation + turretSpeed;
+       socket.emit('rotateTurret', {id: localTank.id, amount: turretSpeed});
+       rotateTurret(tank, turretSpeed);
    } else if (key === ' ') {
+       var now = new Date();
+       var fireWait_ms = now.getTime() - lastShotTime.getTime();
+       if (fireWait_ms < fireWaitDelay_ms) return;
+       lastShotTime = now;
+       socket.emit('fire', {id: localTank.id});
        fire(tank);
    }
 }
@@ -155,10 +186,11 @@ function keyup(event) {
 }
 
 function drawAll() {
-    context.clearRect ( 0 , 0 , canvas.width, canvas.height );
+    context.clearRect(0 , 0, canvas.width, canvas.height);
     drawCaptureCircle();
-    drawTank(tank1);
+    drawTanks();
     drawShells();
+    dirty = false;
 }
 
 function timerTick() {
@@ -167,19 +199,66 @@ function timerTick() {
         redrawNeeded = true;
         keypress(key);
     }
+    if (dirty) redrawNeeded = true;
     if (redrawNeeded) drawAll();
+    
+    var now = new Date();
+    var lastUpdateGap_ms = now.getTime() - lastTankUpdate.getTime();
+    
+    if (lastUpdateGap_ms > tankUpdateThreshold_ms) {
+        socket.emit('tank', localTank);
+        lastTankUpdate = new Date();
+    }
+}
+
+function tankForID(id) {
+    // console.log("tankForID", id, tanks[id]);
+    return tanks[id];
 }
 
 function setup() {
+    tanks[localTank.id] = localTank;
 
-    tank1.bodyImage.src = 'images/hullv1.png';
-    tank1.turretImage.src = 'images/tank1imageturretv2.png';
+    bodyImage.src = 'images/hullv1.png';
+    turretImage.src = 'images/tank1imageturretv2.png';
     shellImage.src = 'images/shell.png';
         
     window.onkeydown = keydown;
     window.onkeyup = keyup;
     
     window.setInterval(timerTick, 100);
+    
+    socket.on('rotateTank', function(message) {
+        // console.log("rotateTank", message);
+        var tank = tankForID(message.id);
+        if (tank && message.id !== localTank.id) rotateTank(tank, message.amount);
+    });
+    
+    socket.on('moveTank', function(message) {
+        // console.log("moveTank", message);
+        var tank = tankForID(message.id);
+        if (tank && message.id !== localTank.id) moveTank(tank, message.amount);
+    });
+    
+    socket.on('rotateTurret', function(message) {
+        // console.log("rotateTurret", message);
+        var tank = tankForID(message.id);
+        if (tank && message.id !== localTank.id) rotateTurret(tank, message.amount);
+    });
+    
+    socket.on('fire', function(message) {
+        // console.log("fire", message);
+        var tank = tankForID(message.id);
+        if (tank && message.id !== localTank.id && tanks) fire(tank);
+    });
+    
+    socket.on('tank', function(message) {
+        // console.log("tank", message);
+        if (message.id !== localTank.id) {
+            tanks[message.id] = message;
+            dirty = true;
+        }
+    });
 }
 
 setup();

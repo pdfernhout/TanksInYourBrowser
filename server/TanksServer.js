@@ -59,3 +59,32 @@ var server = http.createServer(app).listen(8090, function () {
   var port = server.address().port;
   console.log("TanksServer app listening at http://%s:%s", host, port);
 });
+
+var io = require('socket.io')(server);
+
+io.on('connection', function(socket) {
+    console.log('a user connected');
+    socket.on('disconnect', function() {
+        console.log('user disconnected');
+    });
+    socket.on('rotateTank', function(message) {
+        io.emit('rotateTank', message);
+        // console.log('rotateTank', message);
+    });
+    socket.on('moveTank', function(message) {
+        io.emit('moveTank', message);
+        // console.log('moveTank', message);
+    });
+    socket.on('rotateTurret', function(message) {
+        io.emit('rotateTurret', message);
+        // console.log('rotateTurret', message);
+    });
+    socket.on('fire', function(message) {
+        io.emit('fire', message);
+        // console.log('fire', message);
+    });
+    socket.on('tank', function(message) {
+        io.emit('tank', message);
+        // console.log('tank', message);
+    });
+});
