@@ -1,4 +1,5 @@
-// Test at: http://localhost:8080/pointrel/pointrel-app/
+// Test at: http://localhost:8090
+
 /*jslint node: true */
 "use strict";
 
@@ -12,9 +13,6 @@ var https = require('https');
 
 var express = require('express');
 var bodyParser = require('body-parser');
-
-// the server library
-var pointrel20141201Server = require("./pointrel20141201Server");
 
 // Main code
 
@@ -30,12 +28,6 @@ var logger = function(request, response, next) {
 };
 
 app.use(logger);
-
-// TODO: May need to move this and split up JSON parsing functionality
-// TODO: Could there be an issue with bodyParser with undeleted temp files?
-// includes support to parse JSON-encoded bodies (and saving the rawBody)
-pointrel20141201Server.initialize(app);
-// app.use(bodyParser.json());
 
 // to support URL-encoded bodies
 app.use(bodyParser.urlencoded({
