@@ -142,28 +142,28 @@ function rotateTurret(tank, amount) {
     dirty = true;
 }
 
-function keypress(key) {
+function keypress(keyCode) {
     var tank = localTank;
    // console.log("keypress event detected: ", key);
-   if (key === 'a' || key === 'A') {
+   if (keyCode === 65) {
        socket.emit('rotateTank', {id: localTank.id, amount: -traverseSpeed});
        rotateTank(tank, -traverseSpeed);
-   } else if (key === 'd' || key === 'D') {
+   } else if (keyCode === 68) {
        socket.emit('rotateTank', {id: localTank.id, amount: traverseSpeed});
        rotateTank(tank, traverseSpeed);
-   } else if (key === 'w' || key === 'W') {
+   } else if (keyCode === 87) {
        socket.emit('moveTank', {id: localTank.id, amount: 10});
        moveTank(tank, 10);
-   } else if (key === 's' || key === 'S') {
+   } else if (keyCode === 83) {
        socket.emit('moveTank', {id: localTank.id, amount: -10});
        moveTank(tank, -10);
-   } else if (key === 'Left') {
+   } else if (keyCode === 37) {
        socket.emit('rotateTurret', {id: localTank.id, amount: -turretSpeed});
        rotateTurret(tank, -turretSpeed);
-   } else if (key === 'Right') {
+   } else if (keyCode === 39) {
        socket.emit('rotateTurret', {id: localTank.id, amount: turretSpeed});
        rotateTurret(tank, turretSpeed);
-   } else if (key === ' ') {
+   } else if (keyCode === 32) {
        var now = new Date();
        var fireWait_ms = now.getTime() - lastShotTime.getTime();
        if (fireWait_ms < fireWaitDelay_ms) return;
@@ -174,15 +174,17 @@ function keypress(key) {
 }
 
 function keydown(event) {
-    var key = event.key;
-    downKeys[key] = true;
-    keypress(key);
+    var keyCode = event.keyCode;
+    // console.log("keydown", event, keyCode);
+    downKeys["" + keyCode] = keyCode;
+    keypress(keyCode);
     drawAll();
 }
 
 function keyup(event) {
-    var key = event.key;
-    delete downKeys[key];
+    var keyCode = event.keyCode;
+    // console.log("keyup", event, keyCode);
+    delete downKeys["" + keyCode];
 }
 
 function drawAll() {
@@ -197,7 +199,7 @@ function timerTick() {
     var redrawNeeded = incrementShells();
     for (var key in downKeys) {
         redrawNeeded = true;
-        keypress(key);
+        keypress(downKeys[key]);
     }
     if (dirty) redrawNeeded = true;
     if (redrawNeeded) drawAll();
